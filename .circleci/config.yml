@@ -12,19 +12,23 @@ version: 2.1
 #     ...
 
 jobs:
-  hello-world: # Delete this job when you get started
+  build-backend:
     docker:
-      - image: amazon/aws-cli
+      - image: circleci/node:13.8.0
     steps:
       - checkout
-      - run:
-          name: Say Hello
-          command: |
-            echo "Hello World"
+      - run: cd ./backend
+      - run: npm i
+      - run: npm run build
 
-#  build-frontend:
-
-#  build-frontend:
+  build-frontend:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - checkout
+      - run: cd ./frontend
+      - run: npm i
+      - run: npm run build
 
 #  test-frontend:
 
@@ -49,6 +53,9 @@ jobs:
 #  cloudfront-update:
 
 workflows:
-  default:
+  build_project:
     jobs:
-      - hello-world
+      - build-backend
+      - build-frontend:
+          requires:
+            - build-backend
