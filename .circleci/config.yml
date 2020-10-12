@@ -21,6 +21,7 @@ jobs:
           name: Backend test
           command: |
             cd ./backend
+            npm i
             npm run test
 
   build-backend:
@@ -32,6 +33,7 @@ jobs:
           name: Backend build
           command: |
             cd ./backend
+            npm i
             npm run build
 
   test-frontend:
@@ -43,6 +45,7 @@ jobs:
           name: Frontend test
           command: |
             cd ./frontend
+            npm i
             npm run test
 
   build-frontend:
@@ -54,6 +57,7 @@ jobs:
           name: Frontend build
           command: |
             cd ./frontend
+            npm i
             npm run build
 
 #  est-backend:
