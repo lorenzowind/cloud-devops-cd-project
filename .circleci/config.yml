@@ -11,9 +11,6 @@ version: 2.1
 #     description: Revert the last migration if successfully run in the current workflow.
 #     ...
 
-orbs:
-  slack: circleci/slack@4.0.0
-
 jobs:
   test-backend:
     docker:
@@ -26,12 +23,6 @@ jobs:
             cd ./backend
             npm i
             npm run test
-      - slack/notify:
-          event: fail
-          template: basic_fail_1
-      - slack/notify:
-          event: pass
-          template: success_tagged_deploy_1
 
   analyze-backend:
     docker:
@@ -57,30 +48,6 @@ jobs:
             npm i
             npm run build
 
-  test-frontend:
-    docker:
-      - image: circleci/node:13.8.0
-    steps:
-      - checkout
-      - run: 
-          name: Frontend test
-          command: |
-            cd ./frontend
-            npm i
-            npm run test
-
-  analyze-frontend:
-    docker:
-      - image: circleci/node:13.8.0
-    steps:
-      - checkout
-      - run: 
-          name: Scan frontend dependencies 
-          command: |
-            cd ./frontend
-            npm i
-            npm audit --audit-level=critical
-
   build-frontend:
     docker:
       - image: circleci/node:13.8.0
@@ -96,8 +63,6 @@ jobs:
 #  est-backend:
 
 #  can-frontend:
-
-#  scan-backend:
 
 #  deploy-infrastructure:
 
