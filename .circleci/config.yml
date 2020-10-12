@@ -24,6 +24,18 @@ jobs:
             npm i
             npm run test
 
+  analyze-backend:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - checkout
+      - run: 
+          name: Scan backend dependencies 
+          command: |
+            cd ./backend
+            npm i
+            npm audit --audit-level=critical
+
   build-backend:
     docker:
       - image: circleci/node:13.8.0
@@ -47,6 +59,18 @@ jobs:
             cd ./frontend
             npm i
             npm run test
+
+  analyze-frontend:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - checkout
+      - run: 
+          name: Scan frontend dependencies 
+          command: |
+            cd ./frontend
+            npm i
+            npm audit --audit-level=critical
 
   build-frontend:
     docker:
@@ -81,15 +105,21 @@ jobs:
 #  cloudfront-update:
 
 workflows:
-  test_build_project:
+  test_analyze_build_project:
     jobs:
       - test-backend
-      - build-backend:
+      - analyze-backend:
           requires:
             - test-backend
+      - build-backend:
+          requires:
+            - analyze-backend
       - test-frontend:
           requires:
             - build-backend
-      - build-frontend:
+      - analyze-frontend:
           requires:
             - test-frontend
+      - build-frontend:
+          requires:
+            - analyze-frontend
