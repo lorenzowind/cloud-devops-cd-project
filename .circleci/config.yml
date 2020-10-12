@@ -11,6 +11,9 @@ version: 2.1
 #     description: Revert the last migration if successfully run in the current workflow.
 #     ...
 
+orbs:
+  slack: circleci/slack@4.0.0
+
 jobs:
   test-backend:
     docker:
@@ -23,6 +26,12 @@ jobs:
             cd ./backend
             npm i
             npm run test
+      - slack/notify:
+          event: fail
+          template: basic_fail_1
+      - slack/notify:
+          event: pass
+          template: success_tagged_deploy_1
 
   analyze-backend:
     docker:
@@ -114,12 +123,6 @@ workflows:
       - build-backend:
           requires:
             - analyze-backend
-      - test-frontend:
-          requires:
-            - build-backend
-      - analyze-frontend:
-          requires:
-            - test-frontend
       - build-frontend:
           requires:
-            - analyze-frontend
+            - build-backend
