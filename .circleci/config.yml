@@ -18,10 +18,10 @@ jobs:
     steps:
       - checkout
       - run: 
-          name: Backend build
+          name: Backend test
           command: |
             cd ./backend
-            npm test
+            npm run test
 
   build-backend:
     docker:
@@ -32,7 +32,6 @@ jobs:
           name: Backend build
           command: |
             cd ./backend
-            npm i
             npm run build
 
   test-frontend:
@@ -41,10 +40,10 @@ jobs:
     steps:
       - checkout
       - run: 
-          name: Frontend build
+          name: Frontend test
           command: |
             cd ./frontend
-            npm test
+            npm run test
 
   build-frontend:
     docker:
@@ -55,7 +54,6 @@ jobs:
           name: Frontend build
           command: |
             cd ./frontend
-            npm i
             npm run build
 
 #  est-backend:
