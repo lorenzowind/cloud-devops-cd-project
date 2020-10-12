@@ -12,6 +12,17 @@ version: 2.1
 #     ...
 
 jobs:
+  test-backend:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - checkout
+      - run: 
+          name: Backend build
+          command: |
+            cd ./backend
+            npm test
+
   build-backend:
     docker:
       - image: circleci/node:13.8.0
@@ -24,6 +35,17 @@ jobs:
             npm i
             npm run build
 
+  test-frontend:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - checkout
+      - run: 
+          name: Frontend build
+          command: |
+            cd ./frontend
+            npm test
+
   build-frontend:
     docker:
       - image: circleci/node:13.8.0
@@ -35,8 +57,6 @@ jobs:
             cd ./frontend
             npm i
             npm run build
-
-#  test-frontend:
 
 #  est-backend:
 
@@ -59,9 +79,15 @@ jobs:
 #  cloudfront-update:
 
 workflows:
-  build_project:
+  test_build_project:
     jobs:
-      - build-backend
-      - build-frontend:
+      - test-backend
+      - build-backend:
+          requires:
+            - test-backend
+      - test-frontend:
           requires:
             - build-backend
+      - build-frontend:
+          requires:
+            - test-frontend
