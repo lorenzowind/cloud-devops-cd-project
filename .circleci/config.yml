@@ -144,7 +144,7 @@ jobs:
       - run:
           name: Extract the backend ip address from memstash so that frontend can use it
           command: |
-            chmod 777  ./.circleci/files/extract_backend_ip.sh 
+            chmod 777 ./.circleci/files/extract_backend_ip.sh 
             ./.circleci/files/extract_backend_ip.sh
             cat inventory
       - add_ssh_keys:
@@ -183,10 +183,7 @@ jobs:
     steps:
       - checkout
       - run: 
-          cd backend && npm install
-      - run: 
-          name: Run database migrations 
-          no_output_timeout: 10m
+          name: Run database migrations
           command: |
             echo "NODE_ENV=production" >> backend/.env
             echo "TYPEORM_CONNECTION=${TYPEORM_CONNECTION}" >> backend/.env
@@ -197,10 +194,8 @@ jobs:
             echo "TYPEORM_PORT=${TYPEORM_PORT}" >> backend/.env
             echo "TYPEORM_USERNAME=${TYPEORM_USERNAME}" >> backend/.env
             echo "TYPEORM_PASSWORD=${TYPEORM_PASSWORD}" >> backend/.env
-            echo "TYPEORM_DATABASE=${TYPEORM_DATABASE}" >> backend/.env  
-            cd backend
-            npm i
-            npm audit fix --audit-level=critical --force
+            echo "TYPEORM_DATABASE=${TYPEORM_DATABASE}" >> backend/.env
+            cd backend && npm i
             npm run migrations > migrations.txt
       - run:
           name: Save result value
@@ -224,8 +219,8 @@ jobs:
       - run:
           name: Store the backend ip address to memstash so that frontend can use it. 
           command: |
-            chmod 777 extract_ip_address.sh 
-            ./extract_ip_address.sh  
+            chmod 777 ./.circleci/files/extract_backend_ip.sh 
+            ./.circleci/files/extract_backend_ip.sh 
       - add_ssh_keys:
           fingerprints: ["f8:53:0a:66:d3:17:cc:bd:70:f9:24:9b:18:9a:fa:72"]
       - run:
@@ -260,8 +255,8 @@ jobs:
       - run:
           name: Set the api url to environment so that frontend can burn it to the code on compile
           command: |
-            chmod 777 set_backend_ip.sh
-            source .circleci/files/set_backend_ip.sh
+            chmod 777 ./.circleci/files/set_backend_ip.sh
+            source ./.circleci/files/set_backend_ip.sh
       - run:
           name: Install npm
           command: |
