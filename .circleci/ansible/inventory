@@ -1,0 +1,6 @@
+[defaults]
+host_key_checking=False
+interpreter_python=auto_legacy
+ansible_python_interpreter=/usr/bin/python3
+[ssh_connection]
+scp_if_ssh=True

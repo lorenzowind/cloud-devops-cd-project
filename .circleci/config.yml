@@ -86,11 +86,71 @@ jobs:
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}" \
               --tags project=udapeople
 
+  get_instance_ip:
+    environment:
+      ID: arns3
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Get the instance ip address for backend 
+          command: |
+            aws ec2 describe-instances \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --filters "Name=tag:project,Values=udapeople" \
+              --output text >> inventory
+      - run:
+          name: Store the backend ip address to memstash so that frontend can use it
+          command: |
+            chmod 777 bkmemstash.sh
+            ./bkmemstash.sh
+            cat inventory
+
+  configure_infrastructure:
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - run: apk add --no-cache --upgrade bash
+      - run: apk --no-cache add curl
+      - run:
+          name: Store the backend ip address to memstash so that frontend can use it
+          command: |
+            chmod 777 extract_ip_address.sh 
+            ./extract_ip_address.sh
+            cat inventory
+      - add_ssh_keys:
+          fingerprints: ["f8:53:0a:66:d3:17:cc:bd:70:f9:24:9b:18:9a:fa:72"]
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update ansible
+      - run:
+          name: Install openssh
+          command: |
+            apk add openssh-client      
+      - run:
+          name: Configure server
+          no_output_timeout: 30m
+          command: |
+            echo ENVIRONMENT=production > "backend/.env"
+            echo TYPEORM_CONNECTION=postgres >> "backend/.env"
+            echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> "backend/.env"
+            echo TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts >> "backend/.env"
+            echo TYPEORM_MIGRATIONS=./src/migrations/*.ts >> "backend/.env"
+            echo TYPEORM_HOST=udapeople-prod.crlxmmeso4wy.us-east-2.rds.amazonaws.com >> "backend/.env"
+            echo TYPEORM_PORT=5432 >> "backend/.env"
+            echo TYPEORM_USERNAME=postgres >> "backend/.env"
+            echo TYPEORM_PASSWORD=udapeople123 >> "backend/.env"
+            echo TYPEORM_DATABASE=udapeople-prod >> "backend/.env"
+            cd .circleci/ansible/
+            ansible-playbook -i ~/project/inventory  main.yml
+      - destroy-stack   
+
 #  est-backend:
 
 #  can-frontend:
-
-#  configure-infrastructure:
 
 #  run-migrations:
 

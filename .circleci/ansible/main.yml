@@ -1,0 +1,10 @@
+---
+- name: Set up a web server in ec2
+  hosts: all
+  user: ubuntu
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    host_key_checking: false
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+  roles:
+   - configure-server
