@@ -306,7 +306,9 @@ jobs:
       - run:
           name: Update the deployed app to production and cleanup
           command: |
-            sudo apt-get install jq
+            wget -O jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
+            chmod +x ./jq
+            cp jq /usr/bin
             curl -H "content-length: 0" -X POST "https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${STORE_TOKEN}/workflow_id/${CIRCLE_WORKFLOW_ID:0:7}"
             
             export OldWorkflowId=$(curl https://keyvalue.immanuel.co/api/KeyVal/GetValue/${STORE_TOKEN}/workflow_id | jq -r)
