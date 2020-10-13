@@ -162,7 +162,6 @@ jobs:
           no_output_timeout: 30m
           command: |
             cd backend
-            rm .env.sample
             touch .env
             echo "NODE_ENV=production" > .env
             echo "TYPEORM_CONNECTION=${TYPEORM_CONNECTION}" >> .env
@@ -174,8 +173,7 @@ jobs:
             echo "TYPEORM_USERNAME=${TYPEORM_USERNAME}" >> .env
             echo "TYPEORM_PASSWORD=${TYPEORM_PASSWORD}" >> .env
             echo "TYPEORM_DATABASE=${TYPEORM_DATABASE}" >> .env
-            cd ..
-            cd .circleci/ansible/
+            cd ../.circleci/ansible/
             ansible-playbook -i ~/project/inventory configure_server_playbook.yml
       - destroy-stack
 
@@ -190,8 +188,20 @@ jobs:
           name: Run database migrations 
           no_output_timeout: 10m
           command: |
+            cd backend
+            touch .env
+            echo "NODE_ENV=production" > .env
+            echo "TYPEORM_CONNECTION=${TYPEORM_CONNECTION}" >> .env
+            echo "TYPEORM_MIGRATIONS_DIR=${TYPEORM_MIGRATIONS_DIR}" >> .env
+            echo "TYPEORM_ENTITIES=${TYPEORM_ENTITIES}" >> .env
+            echo "TYPEORM_MIGRATIONS=${TYPEORM_MIGRATIONS}" >> .env
+            echo "TYPEORM_HOST=${TYPEORM_HOST}" >> .env
+            echo "TYPEORM_PORT=${TYPEORM_PORT}" >> .env
+            echo "TYPEORM_USERNAME=${TYPEORM_USERNAME}" >> .env
+            echo "TYPEORM_PASSWORD=${TYPEORM_PASSWORD}" >> .env
+            echo "TYPEORM_DATABASE=${TYPEORM_DATABASE}" >> .env
             touch migration_results.txt
-            cd backend && npm run migrations > migration_results.txt
+            npm run migrations > migration_results.txt
       - run:
           name: Save result value
           command: |
@@ -307,7 +317,7 @@ jobs:
       - run:
           name: Update the deployed app to production and cleanup
           command: |
-            wget -O jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
+            curl https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 -o jq
             chmod +x ./jq
             cp jq /usr/bin
             curl -H "content-length: 0" -X POST "https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${STORE_TOKEN}/workflow_id/${CIRCLE_WORKFLOW_ID:0:7}"
