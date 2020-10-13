@@ -1,15 +1,41 @@
 version: 2.1
 
-### It's a good practice to keep your commands at the top of the config file. In this project, you'll need at least 2 commands:
-
-# commands:
-#   destroy-environment:
-#     description: Destroy backend and frontend cloudformation stacks given a workflow ID.
-#     ...
-
-#   revert-migration:
-#     description: Revert the last migration if successfully run in the current workflow.
-#     ...
+commands:
+  destroy-stack:
+    description: "command for reverting and destroying stack"
+    parameters:
+      to:
+        type: string
+        default: "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
+      front:
+        type: string
+        default: "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
+    steps:
+      - run:
+          name: Delete s3 files
+          command: |
+            pip3 install awscli
+            aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+          when: on_fail
+      - run:
+          name: Delete current stacks
+          command: |
+            aws cloudformation delete-stack --stack-name  << parameters.to >>
+            aws cloudformation delete-stack --stack-name  << parameters.front >>
+          when: on_fail
+      - run:
+          name: Revert last migration
+          command: |
+            VALUE=$(curl -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" --request GET https://api.memstash.io/values/<< pipeline.id >>_migrations)
+            if $VALUE == "true"
+            then
+            cd ./backend
+            echo "Reverting migrations"
+            npm run migrations:revert
+            else 
+            echo "No migration occured"
+            fi
+          when: on_fail
 
 jobs:
   test-backend:
@@ -86,7 +112,7 @@ jobs:
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}" \
               --tags project=udapeople
 
-  get_instance_ip:
+  store-backend-ip:
     environment:
       ID: arns3
     docker:
@@ -107,7 +133,7 @@ jobs:
             ./bkmemstash.sh
             cat inventory
 
-  configure_infrastructure:
+  configure-infrastructure:
     docker:
       - image: python:3.7-alpine3.11
     steps:
@@ -145,22 +171,159 @@ jobs:
             echo TYPEORM_PASSWORD=udapeople123 >> "backend/.env"
             echo TYPEORM_DATABASE=udapeople-prod >> "backend/.env"
             cd .circleci/ansible/
-            ansible-playbook -i ~/project/inventory  main.yml
-      - destroy-stack   
+            ansible-playbook -i ~/project/inventory configure_server_playbook.yml
+      - destroy-stack
 
-#  est-backend:
+  run-migrations:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - checkout
+      - run: 
+          cd backend && npm install
+      - run: 
+          name: Run database migrations 
+          no_output_timeout: 10m
+          command: |
+            touch migration_results.txt
+            cd backend && npm run migrations > migration_results.txt
+      - run:
+          name: Save result value
+          command: |
+            cd backend
+            if grep "executed successfully" migration_results.txt
+            then
+            curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" --request PUT --data "true" https://api.memstash.io/values/<< pipeline.id >>_migrations
+            else
+            curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" --request PUT --data "false" https://api.memstash.io/values/<< pipeline.id >>_migrations
+            fi
+      - destroy-stack      
 
-#  can-frontend:
+  deploy-backend:
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - run: apk --no-cache add curl
+      - run: apk add --no-cache --upgrade bash
+      - run:
+          name: Store the backend ip address to memstash so that frontend can use it. 
+          command: |
+            chmod 777 extract_ip_address.sh 
+            ./extract_ip_address.sh  
+      - add_ssh_keys:
+          fingerprints: ["f8:53:0a:66:d3:17:cc:bd:70:f9:24:9b:18:9a:fa:72"]
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update ansible 
+      - run:
+          name: Install openssh
+          command: |
+             apk add openssh-client 
+      - run:
+          name: Copy files to server
+          no_output_timeout: 60m
+          command: |
+            printenv >> ./backend/.env
+            cat ./backend/.env
+            cd .circleci/ansible/ 
+            ansible-playbook -i ~/project/inventory deploy_backend_playbook.yml
+      - destroy-stack
 
-#  run-migrations:
+  prepare-distribution-frontend:
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - run: apk --no-cache add curl
+      - run: apk add --no-cache --upgrade bash
+      - run:
+          name: Install awscli
+          command: |
+            pip3 install awscli
+      - run:
+          name: Set the API_URL to environment so that frontend can burn it to the code on compile
+          command: |
+            chmod 777 set_backend_ip_env.sh
+            source ./set_backend_ip_env.sh
+      - run:
+          name: Install npm
+          command: |
+            apk add --update npm
+      - run: npm install webpack-dev-server -g
+      - run: cd frontend && npm install
+      - run: cd frontend && npm run build
+      - run: aws s3 cp frontend/dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}/ --recursive
+      - destroy-stack    
 
-#  deploy-frontend:
+  run-smoke-test:
+    docker:
+      - image: python:3.7-alpine3.11
+    environment: 
+      ID: arns3
+    steps:
+      - checkout
+      - run: apk --no-cache add curl
+      - run:
+          name: Set the API_URL to environment so that smoke test can be done to backend
+          command: |
+            chmod 777 set_backend_ip_env.sh
+            source ./set_backend_ip_env.sh
+      - run:
+          name: Install awscli
+          command: |
+            pip3 install awscli 
+      - run:
+          name: Frontend smoke test
+          command: |
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3.ap-south-1.amazonaws.com/#/employees"            
+            if curl -s ${URL} | grep "Welcome"
+            then
+            return 1
+            else
+            return 0
+            fi       
+      - run:
+          name: Backend smoke test
+          command: |
+            BACKEND_IP=$(aws ec2 describe-instances \
+            --filters "Name=tag:project, Values=udapeople" \
+            --query 'Reservations[*].Instances[*].PublicIpAddress' \
+            --output text)
+            curl "http://${BACKEND_IP}:3030/api/status"
+      - destroy-stack
 
-#  deploy-backend:  
-
-#  smoke-test:
-
-#  cloudfront-update:
+  update-cloudfront:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Update the deployed app to production and cleanup
+          command: |
+            sudo apt-get install jq
+            curl -H "content-length: 0" -X POST "https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/${STORE_TOKEN}/workflow_id/${CIRCLE_WORKFLOW_ID:0:7}"
+            
+            export OldWorkflowId=$(curl https://keyvalue.immanuel.co/api/KeyVal/GetValue/${STORE_TOKEN}/workflow_id | jq -r)
+            
+            export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
+              --stack-status-filter CREATE_COMPLETE --no-paginate --output text)) 
+            
+            echo "Old workflow Id: ${OldWorkflowId}"  
+            
+            aws cloudformation deploy \
+              --template-file .circleci/files/cloudfront.yml \
+              --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
+              --stack-name "udapeople-cloudfront-${CIRCLE_WORKFLOW_ID:0:7}"  \
+              --tags project=udapeople &
+            
+            if [[ "${STACKS[@]}" =~ "${OldWorkflowId}" ]]
+            then
+              aws s3 rm s3://udapeople-${OldWorkflowId} --recursive
+              aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowId}"
+              aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowId}"
+            fi
 
 workflows:
   test_analyze_build_project:
@@ -178,3 +341,18 @@ workflows:
       - deploy-infrastructure:
           requires:
             - build-frontend
+      - store-backend-ip:
+          requires:
+            - deploy-infrastructure
+      - configure-infrastructure:
+          requires:
+            - store-backend-ip
+      - run-migrations:
+          requires:
+            - configure-infrastructure
+      - deploy-backend:
+          requires:
+            - run-migrations
+      - prepare-distribution-frontend:
+          requires:
+            - deploy-backend

@@ -1,0 +1,5 @@
+1. GitHub Repository's Link: https://github.com/lorenzowind/cloud-devops-cd-project
+2. S3 Bucket's Link:
+3. CloudFormation's Link:
+4. Deployed Application's Link:
+5. Prometheus Server's Link: 
