@@ -162,6 +162,7 @@ jobs:
           no_output_timeout: 30m
           command: |
             cd backend
+            rm .env.sample
             touch .env
             echo "NODE_ENV=production" > .env
             echo "TYPEORM_CONNECTION=${TYPEORM_CONNECTION}" >> .env
