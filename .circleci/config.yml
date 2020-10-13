@@ -129,8 +129,8 @@ jobs:
       - run:
           name: Store the backend ip address to memstash so that frontend can use it
           command: |
-            chmod 777 store_backend_ip.sh
-            .circleci/files/store_backend_ip.sh
+            chmod 777 ./.circleci/files/store_backend_ip.sh
+            ./.circleci/files/store_backend_ip.sh
             cat inventory
 
   configure-infrastructure:
@@ -143,8 +143,8 @@ jobs:
       - run:
           name: Extract the backend ip address from memstash so that frontend can use it
           command: |
-            chmod 777 extract_backend_ip.sh 
-            .circleci/files/extract_backend_ip.sh
+            chmod 777  ./.circleci/files/extract_backend_ip.sh 
+            ./.circleci/files/extract_backend_ip.sh
             cat inventory
       - add_ssh_keys:
           fingerprints: ["f8:53:0a:66:d3:17:cc:bd:70:f9:24:9b:18:9a:fa:72"]
@@ -268,8 +268,8 @@ jobs:
       - run:
           name: Set the API_URL to environment so that smoke test can be done to backend
           command: |
-            chmod 777 set_backend_ip_env.sh
-            source ./set_backend_ip_env.sh
+            chmod 777 ./.circleci/files/set_backend_ip_env.sh
+            source ./.circleci/files/set_backend_ip_env.sh
       - run:
           name: Install awscli
           command: |
@@ -326,7 +326,7 @@ jobs:
             fi
 
 workflows:
-  test_analyze_build_project:
+  prepare_project:
     jobs:
       - test-backend
       - analyze-backend:
