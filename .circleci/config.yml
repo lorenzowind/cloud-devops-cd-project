@@ -14,6 +14,7 @@ commands:
       - run:
           name: Delete s3 files
           command: |
+            apk update && apk add
             apt-get install sudo
             sudo adduser ubuntu sudo
             sudo apt-get install python3-pip
