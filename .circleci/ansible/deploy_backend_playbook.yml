@@ -2,6 +2,7 @@
 - name: Copy backend files to server
   hosts: all
   user: ubuntu
+
   vars:
     ansible_python_interpreter: /usr/bin/python3
     host_key_checking: false
@@ -18,5 +19,6 @@
     TYPEORM_DATABASE: "{{ lookup('env','TYPEORM_DATABASE') }}"
     ENVIRONMENT: "{{ lookup('env','ENVIRONMENT') }}"
     API_URL: "{{ lookup('env','API_URL') }}"
+    
   roles:
    - deploy

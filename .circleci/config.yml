@@ -181,30 +181,6 @@ jobs:
             ansible-playbook -i ~/project/inventory configure_server_playbook.yml
       - destroy-stack
 
-  run-migrations:
-    docker:
-      - image: circleci/node:13.8.0
-    steps:
-      - checkout
-      - create-env-file
-      - run: 
-          name: Run database migrations
-          command: |
-            cd backend
-            npm i
-            npm run migrations > migrations.txt
-      - run:
-          name: Save result value
-          command: |
-            cd backend
-            if grep "executed successfully" migrations.txt
-            then
-            curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" --request PUT --data "true" https://api.memstash.io/values/<< pipeline.id >>_migrations
-            else
-            curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" --request PUT --data "false" https://api.memstash.io/values/<< pipeline.id >>_migrations
-            fi
-      - destroy-stack
-
   deploy-backend:
     docker:
       - image: python:3.7-alpine3.11
@@ -355,12 +331,9 @@ workflows:
       - configure-infrastructure:
           requires:
             - store-backend-ip
-      - run-migrations:
-          requires:
-            - configure-infrastructure
       - deploy-backend:
           requires:
-            - run-migrations
+            - configure-infrastructure
       - prepare-distribution-frontend:
           requires:
             - deploy-backend
