@@ -1,12 +1,13 @@
-- name: "creates a directory"
-  file:
-    path: /home/ubuntu/backend
-    state: directory
-
 - name: "move the backend files to server"
   copy:
     src: /root/project/backend
     dest: /home/ubuntu
+
+- name: "stop server in pm2"
+  ignore_errors: yes
+  shell: |
+    pm2 stop backend
+    pm2 delete backend
 
 - name: "install package dependencies"
   shell: |
@@ -18,14 +19,7 @@
     cd /home/ubuntu/backend
     npm run build
     
-- name: "run migrations"
-  shell: |
-    cd /home/ubuntu/backend
-    npm run migrations
-    
 - name: "execute server in pm2"
-  become: true
   shell: |
     cd /home/ubuntu/backend 
     pm2 start npm --name backend -- start
-    pm2 ls

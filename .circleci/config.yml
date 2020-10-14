@@ -37,6 +37,23 @@ commands:
             echo "No migration occured"
             fi
           when: on_fail
+  create-env-file:
+    description: Command used for creating env file
+    steps:
+      - run:
+          name: Create the env file
+          command: |
+            echo "NODE_ENV=production" >> backend/.env
+            echo "VERSION=1" >> backend/.env
+            echo "TYPEORM_CONNECTION=${TYPEORM_CONNECTION}" >> backend/.env
+            echo "TYPEORM_MIGRATIONS_DIR=${TYPEORM_MIGRATIONS_DIR}" >> backend/.env
+            echo "TYPEORM_ENTITIES=${TYPEORM_ENTITIES}" >> backend/.env
+            echo "TYPEORM_MIGRATIONS=${TYPEORM_MIGRATIONS}" >> backend/.env
+            echo "TYPEORM_HOST=${TYPEORM_HOST}" >> backend/.env
+            echo "TYPEORM_PORT=${TYPEORM_PORT}" >> backend/.env
+            echo "TYPEORM_USERNAME=${TYPEORM_USERNAME}" >> backend/.env
+            echo "TYPEORM_PASSWORD=${TYPEORM_PASSWORD}" >> backend/.env
+            echo "TYPEORM_DATABASE=${TYPEORM_DATABASE}" >> backend/.env  
 
 jobs:
   test-backend:
@@ -154,7 +171,8 @@ jobs:
       - run:
           name: Install openssh
           command: |
-            apk add openssh-client      
+            apk add openssh-client
+      - create-env-file
       - run:
           name: Configure server
           no_output_timeout: 30m
@@ -168,20 +186,12 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       - checkout
+      - create-env-file
       - run: 
           name: Run database migrations
           command: |
-            echo NODE_ENV=production >> "backend/.env"
-            echo TYPEORM_CONNECTION=$TYPEORM_CONNECTION >> "backend/.env"
-            echo TYPEORM_MIGRATIONS_DIR=$TYPEORM_MIGRATIONS_DIR >> "backend/.env"
-            echo TYPEORM_ENTITIES=$TYPEORM_ENTITIES >> "backend/.env"
-            echo TYPEORM_MIGRATIONS=$TYPEORM_MIGRATIONS >> "backend/.env"
-            echo TYPEORM_HOST=$TYPEORM_HOST >> "backend/.env"
-            echo TYPEORM_PORT=$TYPEORM_PORT >> "backend/.env"
-            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> "backend/.env"
-            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> "backend/.env"
-            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> "backend/.env"
-            cd backend && npm i
+            cd backend
+            npm i
             npm run migrations > migrations.txt
       - run:
           name: Save result value
@@ -216,7 +226,8 @@ jobs:
       - run:
           name: Install openssh
           command: |
-             apk add openssh-client 
+             apk add openssh-client
+      - create-env-file
       - run:
           name: Copy files to server
           no_output_timeout: 60m
@@ -272,7 +283,7 @@ jobs:
       - run:
           name: Frontend smoke test
           command: |
-            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3.ap-south-1.amazonaws.com/#/employees"            
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3.${AWS_DEFAULT_REGION}.amazonaws.com/#/employees"            
             if curl -s ${URL} | grep "Welcome"
             then
             return 1
