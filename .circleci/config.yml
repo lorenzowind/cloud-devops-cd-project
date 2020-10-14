@@ -1,31 +1,35 @@
 version: 2.1
 
 commands:
+  install-aws-cli:
+    description: "command for install the AWS CLI"
+    steps:
+      - run:
+          name: Install AWS CLI
+          command: |
+            sudo apt-get install python3-pip
+            pip3 install awscli
   destroy-stack:
     description: "command for reverting and destroying stack"
     parameters:
-      to:
+      back:
         type: string
         default: "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
       front:
         type: string
         default: "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
     steps:
+      - install-aws-cli
       - run:
           name: Delete s3 files
           command: |
-            apk update && apk add
-            apt-get install sudo
-            sudo adduser ubuntu sudo
-            sudo apt-get install python3-pip
-            pip3 install awscli
             aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
           when: on_fail
       - run:
           name: Delete current stacks
           command: |
-            aws cloudformation delete-stack --stack-name  << parameters.to >>
-            aws cloudformation delete-stack --stack-name  << parameters.front >>
+            aws cloudformation delete-stack --stack-name << parameters.back >>
+            aws cloudformation delete-stack --stack-name << parameters.front >>
           when: on_fail
       - run:
           name: Revert last migration
@@ -223,10 +227,7 @@ jobs:
       - checkout
       - run: apk --no-cache add curl
       - run: apk add --no-cache --upgrade bash
-      - run:
-          name: Install awscli
-          command: |
-            pip3 install awscli
+      - install-aws-cli
       - run:
           name: Set the api url to environment so that frontend can burn it to the code on compile
           command: |
@@ -255,10 +256,7 @@ jobs:
           command: |
             chmod 777 ./.circleci/files/set_backend_ip.sh
             source ./.circleci/files/set_backend_ip.sh
-      - run:
-          name: Install awscli
-          command: |
-            pip3 install awscli 
+      - install-aws-cli
       - run:
           name: Frontend smoke test
           command: |
@@ -284,6 +282,7 @@ jobs:
       - image: amazon/aws-cli
     steps:
       - checkout
+      - install-aws-cli
       - run:
           name: Update the deployed app to production and cleanup
           command: |
