@@ -264,7 +264,7 @@ jobs:
             then
             return 1
             else
-            return 0
+            return 1
             fi       
       - run:
           name: Backend smoke test
@@ -337,3 +337,6 @@ workflows:
       - prepare-distribution-frontend:
           requires:
             - deploy-backend
+      - run-smoke-test:
+          requires:
+            - prepare-distribution-frontend
