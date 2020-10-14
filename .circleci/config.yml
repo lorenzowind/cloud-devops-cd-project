@@ -248,10 +248,10 @@ jobs:
       - checkout
       - run: apk --no-cache add curl
       - run:
-          name: Set the API_URL to environment so that smoke test can be done to backend
+          name: Set the api url to environment so that smoke test can be done to backend
           command: |
-            chmod 777 ./.circleci/files/set_backend_ip_env.sh
-            source ./.circleci/files/set_backend_ip_env.sh
+            chmod 777 ./.circleci/files/set_backend_ip.sh
+            source ./.circleci/files/set_backend_ip.sh
       - run:
           name: Install awscli
           command: |
@@ -259,7 +259,7 @@ jobs:
       - run:
           name: Frontend smoke test
           command: |
-            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3.${AWS_DEFAULT_REGION}.amazonaws.com/#/employees"            
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website.${AWS_DEFAULT_REGION}.amazonaws.com/#/employees"            
             if curl -s ${URL} | grep "Welcome"
             then
             return 1
