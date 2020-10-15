@@ -254,7 +254,15 @@ jobs:
       - run:
           name: Install awscli
           command: |
-            pip3 install awscli 
+            pip3 install awscli
+      - run:
+          name: Backend smoke test
+          command: |
+            BACKEND_IP=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --query 'Reservations[*].Instances[*].PublicIpAddress' \
+            --output text)
+            curl "http://${BACKEND_IP}:3030/api/status"
       - run:
           name: Frontend smoke test
           command: |
@@ -264,15 +272,7 @@ jobs:
             return 0
             else
             return 1
-            fi       
-      - run:
-          name: Backend smoke test
-          command: |
-            BACKEND_IP=$(aws ec2 describe-instances \
-            --filters "Name=tag:project, Values=udapeople" \
-            --query 'Reservations[*].Instances[*].PublicIpAddress' \
-            --output text)
-            curl "http://${BACKEND_IP}:3030/api/status"
+            fi
       - destroy-stack
 
   update-cloudfront:
