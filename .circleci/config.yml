@@ -336,9 +336,9 @@ workflows:
       - prepare-distribution-frontend:
           requires:
             - deploy-backend
-      - run-smoke-test:
-          requires:
-            - prepare-distribution-frontend
-      - update-cloudfront:
-          requires:
-            - run-smoke-test
+      # - run-smoke-test:
+      #     requires:
+      #       - prepare-distribution-frontend
+      # - update-cloudfront:
+      #     requires:
+      #       - run-smoke-test
