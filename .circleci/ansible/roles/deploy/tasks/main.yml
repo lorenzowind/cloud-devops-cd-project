@@ -1,36 +1,23 @@
-- name: "move the backend files to server"
+---
+- name: "copy files from circleci to backend server"
   copy:
     src: /root/project/backend
-    dest: /home/ubuntu
+    dest: /home/ubuntu/
 
-- name: "stop server in pm2"
+- name: "stop PM2 service"
   ignore_errors: yes
   shell: |
     pm2 stop backend
     pm2 delete backend
 
-- name: "install package dependencies"
-  shell: |
-    cd /home/ubuntu/backend    
-    npm i 
-    
-- name: "build package"
+- name: "build node service"
   shell: |
     cd /home/ubuntu/backend
+    npm i
+    npm audit fix --audit-level=critical --force
     npm run build
-
-- name: "run the backend migrations"
+      
+- name: "start pm2 service"
   shell: |
     cd /home/ubuntu/backend
-    npm run migrations > migrations.txt
-    date >> migrations.txt
-    curl -H "Content-Type: text/plain" \
-      -H "token: {{ lookup('env', 'MEMSTASH_TOKEN') }}" \
-      --request PUT \
-      --data "$(cat migrations.txt)" \
-      https://api.memstash.io/values/migrations
-    
-- name: "execute server in pm2"
-  shell: |
-    cd /home/ubuntu/backend 
-    pm2 start main.js --name backend
+    pm2 start npm --name backend -- start
