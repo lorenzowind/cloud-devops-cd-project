@@ -206,6 +206,7 @@ jobs:
             apk add --no-cache nodejs
             apk add --no-cache npm
             apk add --no-cache bash
+            apk add --no-cache curl
             pip install awscli
       - run:
           name: Get backend url
@@ -218,7 +219,7 @@ jobs:
             echo "API_URL=$API_URL" >> frontend/.env
             echo "${API_URL}"
       - run:
-          name: "Baking backend API_URL into the frontend"
+          name: Baking backend API_URL into the frontend
           command: |
             npm install webpack-dev-server -g
             cd frontend
