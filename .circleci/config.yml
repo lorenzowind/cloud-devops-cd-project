@@ -258,11 +258,20 @@ jobs:
       - run:
           name: Backend smoke test
           command: |
-            BACKEND_IP=$(aws ec2 describe-instances \
-            --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-            --query 'Reservations[*].Instances[*].PublicIpAddress' \
-            --output text)
-            curl "http://${BACKEND_IP}:3030/api/status"
+            export BACKEND_IP=$(aws ec2 --region us-east-1 describe-instances \
+                  --filters Name=instance-state-name,Values=running Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7} \
+                  --query 'Reservations[*].Instances[*].PublicIpAddress' \
+                  --output text)
+            echo "Backend IP: ${BACKEND_IP}"      
+            EC2_URL="http://${BACKEND_IP}:3030/api/status"
+            echo ${EC2_URL}
+            curl ${EC2_URL}
+            if curl -s ${EC2_URL} | grep "ok"
+            then
+              exit 0
+            else
+              exit 1
+            fi
       - run:
           name: Frontend smoke test
           command: |
