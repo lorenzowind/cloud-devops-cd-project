@@ -259,7 +259,7 @@ jobs:
           name: Backend smoke test
           command: |
             BACKEND_IP=$(aws ec2 describe-instances \
-            --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --filters "Name=tag:project, Values=udapeople" \
             --query 'Reservations[*].Instances[*].PublicIpAddress' \
             --output text)
             curl "http://${BACKEND_IP}:3030/api/status"
@@ -336,9 +336,9 @@ workflows:
       - prepare-distribution-frontend:
           requires:
             - deploy-backend
-      # - run-smoke-test:
-      #     requires:
-      #       - prepare-distribution-frontend
-      # - update-cloudfront:
-      #     requires:
-      #       - run-smoke-test
+      - run-smoke-test:
+          requires:
+            - prepare-distribution-frontend
+      - update-cloudfront:
+          requires:
+            - run-smoke-test
