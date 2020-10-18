@@ -84,24 +84,7 @@ jobs:
           command: |
             cd backend
             npm i
-            npm run build
-            
-  test-frontend:
-    docker:
-      - image: circleci/node:13.8.0
-    steps:
-      - checkout
-      - run:
-          name: Test frontend
-          command: |
-            cd frontend
-            npm i
-            npm i jest-junit
-            npm run test -- --reporters=default --reporters=jest-junit
-          environment:
-            JEST_JUNIT_OUTPUT_DIR: /tmp/reports/junit/
-      - store_test_results:
-          path: /tmp/reports/junit/     
+            npm run build   
           
   test-backend:
     docker:
@@ -353,12 +336,9 @@ workflows:
   default:
     jobs:
       - test-backend
-      - test-frontend:
-          requires:
-            - test-backend
       - analyze-backend:
           requires:
-            - test-frontend
+            - test-backend
       - analyze-frontend:
           requires:
             - analyze-backend
