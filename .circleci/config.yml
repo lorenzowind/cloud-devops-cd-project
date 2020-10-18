@@ -229,7 +229,7 @@ jobs:
       - run: 
           name: Copy built frontend files to the S3 bucket
           command: |
-            aws s3 cp ./frontend/dist s3://udapeople-frontend-"${CIRCLE_WORKFLOW_ID:0:7}" --recursive  
+            aws s3 cp ./frontend/dist s3://udapeople-"${CIRCLE_WORKFLOW_ID:0:7}" --recursive  
       - revert-migration
       - destroy-stack
 
@@ -260,7 +260,7 @@ jobs:
           name: Smoke test frontend
           command: |
             pwd
-            APP_URL="http://udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}.s3-website.${AWS_DEFAULT_REGION}.amazonaws.com/#/employee"
+            APP_URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website.${AWS_DEFAULT_REGION}.amazonaws.com/#/employee"
             if curl -s ${APP_URL} | grep "Welcome"
             then
               exit 0
@@ -308,7 +308,7 @@ jobs:
             if [ -n "${OldWorkflowID}" ]
             then
               echo "Empty old S3 bucket and delete old frontend stack"
-              aws s3 rm s3://udapeople-frontend-${OldWorkflowID}/ --recursive
+              aws s3 rm s3://udapeople-${OldWorkflowID}/ --recursive
               aws cloudformation delete-stack --stack-name udapeople-frontend-${OldWorkflowID}
               echo "Delete old backend stack"              
               aws cloudformation delete-stack --stack-name udapeople-backend-${OldWorkflowID}
