@@ -351,19 +351,48 @@ workflows:
             - build-backend
       - deploy-infra:
           requires:
+            - test-backend
+            - analyze-backend
+            - analyze-frontend
+            - build-backend
             - build-frontend
+          filters:
+            branches:
+              only:
+                - master
       - deploy-backend:
           requires:
             - deploy-infra
+          filters:
+            branches:
+              only:
+                - master
       - run-migrations:
           requires:
-            - deploy-backend 
+            - deploy-backend
+          filters:
+            branches:
+              only:
+                - master
       - deploy-frontend:
           requires:
-            - run-migrations     
+            - run-migrations
+          filters:
+            branches:
+              only:
+                - master   
       - smoke-test:
           requires:
+            - deploy-backend
             - deploy-frontend
+          filters:
+            branches:
+              only:
+                - master
       - deploy-cloudfront-and-cleanup:
           requires:
             - smoke-test
+          filters:
+            branches:
+              only:
+                - master
