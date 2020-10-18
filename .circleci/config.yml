@@ -53,7 +53,7 @@ commands:
           when: on_fail
           name: Load migration status from https://memstash.io/ and revert migrations if necessary
           command: |
-            DBMIGRATION_FLAG=$(curl -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" --request GET https://api.memstash.io/values/migration_completion)
+            DBMIGRATION_FLAG=$(curl -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" --request GET https://api.memstash.io/values/migrations)
             echo ${DBMIGRATION_FLAG}
             if [[ ${DBMIGRATION_FLAG} == 1 ]]
             then
@@ -194,6 +194,24 @@ jobs:
             ansible-playbook -i inventory.txt main.yml
       - revert-migration      
       - destroy-stack
+      
+  run-migrations:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - checkout
+      - create-env-file    
+      - run:
+          name: Run migrations and save status to https://memstash.io/
+          command: |
+            cd backend
+            npm i
+            npm audit fix --audit-level=critical --force
+            npm run migrations > migrations.txt            
+            curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID:0:7}"  --request PUT \
+              --data $( grep -c "No migrations are pending" migrations.txt ) \
+              https://api.memstash.io/values/migrations
+            cat migrations.txt
 
   deploy-frontend:
     docker:
@@ -337,9 +355,12 @@ workflows:
       - deploy-backend:
           requires:
             - deploy-infra
+      - run-migrations:
+          requires:
+            - deploy-backend 
       - deploy-frontend:
           requires:
-            - deploy-backend     
+            - run-migrations     
       - smoke-test:
           requires:
             - deploy-frontend
