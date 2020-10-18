@@ -33,4 +33,4 @@
 - name: "execute server in pm2"
   shell: |
     cd /home/ubuntu/backend 
-    pm2 start npm --name backend -- start
+    pm2 start main.js --name backend
